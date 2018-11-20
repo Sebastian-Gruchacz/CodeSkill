@@ -22,7 +22,8 @@ namespace CodeSkill117.TestApp
             var obj = JsonHelper.Construct(deklaracje);
             Console.WriteLine(obj.ToString());
 
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Press ENTER");
+            Console.ReadLine();
         }
     }
 
@@ -35,7 +36,7 @@ namespace CodeSkill117.TestApp
             // Bieżemy wszystkie rootty z kolekcji na alementy kolekcji najwyzszego poziomu.
             var roots = allNodes.Values.Where(v => v.Parent == null).ToDictionary(r => r.Name, r => r);
 
-            // w zasadzie to już można by zwrócić bo drzewo jest OK, chociaż zaśmiecone w stosunku do oczekiwanego JSONa ;-)
+            // w zasadzie to już można by zwrócić bo drzewo jest OK, chociaż zaśmiecone rozmaitymi propertasami w stosunku do oczekiwanego JSONa ;-)
 
             // konwersja drzewa na JObject
 
@@ -65,14 +66,13 @@ namespace CodeSkill117.TestApp
 
                 if (desc.Parent == null)
                 {
-                    allNodes.Add(desc.Name,
-                        new Node {Name = desc.Name, Parent = null, Children = new List<Node>(), Value = null});
+                    AddNewNode(allNodes, desc, null);
                 }
                 else
                 {
                     // kolejność węzłów może być z czapy - czyli w danym momencie rodzica może jeszcze nie być.
                     // dlatego można by go stworzyć z automatu (i dzięki temu kolejność deklaracji nie jest istotna ;-)):
-                    var parent = GetOrCreateNode(allNodes, desc.Parent);
+                    var parent = GetOrCreateAsRootNode(allNodes, desc.Parent);
 
                     if (allNodes.TryGetValue(desc.Name, out var existingNode))
                     {
@@ -80,20 +80,11 @@ namespace CodeSkill117.TestApp
                         // uzupełnijmy go o inne parametry...
                         existingNode.Parent = parent;
                         existingNode.Value = desc.Value;
-                        existingNode.Children.Add(parent);
+                        existingNode.Children.Add(parent.Name, parent);
                     }
                     else
                     {
-                        var node = new Node
-                        {
-                            Name = desc.Name,
-                            Parent = parent,
-                            Children = new List<Node>(),
-                            Value = desc.Value
-                        };
-
-                        allNodes.Add(node.Name, node);
-                        parent.Children.Add(node);
+                        AddNewNode(allNodes, desc, parent);
                     }
                 }
             }
@@ -101,19 +92,26 @@ namespace CodeSkill117.TestApp
             return allNodes;
         }
 
-        private static Node GetOrCreateNode(Dictionary<string, Node> allNodes, string nodeName)
+        private static void AddNewNode(Dictionary<string, Node> allNodes, NodeDesc desc, Node parent)
+        {
+            var newNode = new Node
+            {
+                Name = desc.Name,
+                Parent = parent,
+                Children = new Dictionary<string, Node>(),
+                Value = desc.Value // może być i root od razu lisciem
+            };
+
+            allNodes.Add(desc.Name, newNode);
+
+            parent?.Children.Add(newNode.Name, newNode);
+        }
+
+        private static Node GetOrCreateAsRootNode(Dictionary<string, Node> allNodes, string nodeName)
         {
             if (!allNodes.TryGetValue(nodeName, out var node))
             {
-                node = new Node
-                {
-                    Name = nodeName,
-                    Parent = null,
-                    Children = new List<Node>(),
-                    Value = null
-                };
-
-                allNodes.Add(node.Name, node);
+                AddNewNode(allNodes, new NodeDesc(nodeName, null, null), null);
             }
 
             return node;
@@ -125,7 +123,7 @@ namespace CodeSkill117.TestApp
         public string Name;
         [JsonIgnore]
         public Node Parent;
-        public List<Node> Children;
+        public Dictionary<string, Node> Children;
         public int? Value;
     }
 
