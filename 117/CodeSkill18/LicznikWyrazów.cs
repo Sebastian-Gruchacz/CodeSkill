@@ -14,8 +14,9 @@ namespace CodeSkill18
     // Do tego pytanie o maksymalną zajętość pamięci w Mapie - struktury wewnętrzne, kubełki, hasze a wreszcie i same liczniki (uint wystarczy?). No ale w 100MB i tak spokojnie by się z tym dało zebrać.
     // Do tego implementacja z hasmapą byłaby dość szybka i bardzo czytelna, zwłaszcza wykorzystując systemowy typ Dictionary<string, uint> i już, bez wynajdywania koła na nowo.
 
-    // Alternatywą wydaje się budowa drzewa (grafu bardziej chyba) rozpinającego o odpowiedniej wielkości. Jego przeszukanie powinno być dość szybkie, pod warunkiem sprawnej funkcji indeksującej.
-    // Podobnej to tej z pierwszego zadania.
+    // Alternatywą wydaje się budowa drzewa (grafu bardziej chyba) rozpinającego o odpowiedniej wielkości.
+    // Jego zbudowanie przeszukanie powinno być dość szybkie, pod warunkiem sprawnej funkcji indeksującej. Podobnej to tej z pierwszego zadania.
+    // I pod warunkiem, że się nie rozrośnie niepotrzebnie...
 
     // Graf potencjalnie rozpinałby się z każdego węzła na maksymalnie 35 węzłów potomnych, przy średniej głębokości 10 poziomów (długość wyrazu),
     // 35^10? potencjalnie masakrycznie dużo...
