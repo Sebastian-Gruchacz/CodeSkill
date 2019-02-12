@@ -9,7 +9,7 @@ namespace CodeSkill18
 {
     public class Anagramy
     {
-        // analizując przykąłdowe dane z zadania mam nadzieję, ze zrozumiałem pop rawnie intencję algorytmu:
+        // analizując przykąłdowe dane z zadania mam nadzieję, ze zrozumiałem poprawnie intencję algorytmu:
         // zwróć te wyrazy, z których liter w dowolnej kombinacji zbudowano wyrazy najliczniej występujące w ciągu wejściowym
 
         private readonly string[] _input = { "mapa", "kajak", "jak", "map", "jaka" };
@@ -23,7 +23,7 @@ namespace CodeSkill18
         // Proste haszowanie odpada ;-(
 
         // pozostaje zbudowanie rzadkiej tablicy mapującej znaki na indeksy i wówczas uda się kompresja na 64 bitach w ulong;
-        // pewnym problemem jest unikode, który rozpycha alfabet od znaku 97 to 380 co bezposrednio dałoby zbyt wiele bitów
+        // pewnym problemem jest też sam unicode, który rozpycha alfabet od znaku 97 do 380 co bezpośrednio dałoby zbyt wiele bitów by upchnąć w czymkolwiek dostępnym w standardzie
 
         private readonly ulong[] _hashIndex;
 

@@ -73,7 +73,7 @@ namespace CodeSkill18
                 węzeł.Value++;
             }
 
-            foreach (var węzeł in drzewo.All.Where(w => w.Value > 0)) // tylko te węzły, które kończą wyrazy
+            foreach (var węzeł in drzewo.All.Where(w => w.Value > 0)) // pozostaw tylko te węzły, które kończą wyrazy
             {
                 var wyraz = ZbudujWyraz(węzeł);
                 yield return new Tuple<string, uint>(wyraz, węzeł.Value);
@@ -103,48 +103,83 @@ namespace CodeSkill18
             Tuple<string, uint>[] hashTest;
             Tuple<string, uint>[] treeTest;
 
+            List<string> daneWejscioweBufor = new List<string>();
+
             using (var provider = new FileWordProvider(filePath))
             {
-                DateTime start = DateTime.Now;
-
-                hashTest = ImplementacjaHaszMapą(provider).OrderBy(p => p.Item1).ToArray();
-
-                DateTime end = DateTime.Now;
-                Console.WriteLine((end - start).TotalMilliseconds);
-            }
-            using (var provider = new FileWordProvider(filePath))
-            {
-                DateTime start = DateTime.Now;
-
-                treeTest = ImplementacjaDrzewem(provider).OrderBy(p => p.Item1).ToArray();
-
-                DateTime end = DateTime.Now;
-                Console.WriteLine((end - start).TotalMilliseconds); 
-
-                // huhu, a jednak - circa dwa razy wolniejsze...zarówno dla normalnych wyrazów jak i takich o 82 znakach...
-                // przy większych plikach, i większej liczbie wyrazów (ok 30k róznych wyrazów) - przewaga jest już mniejsza
+                while (provider.NextWord(out var word))
+                {
+                    daneWejscioweBufor.Add(word);
+                }
             }
 
+            var p1 = new ConstProvider(daneWejscioweBufor);
+            var p2 = new ConstProvider(daneWejscioweBufor);
+
+            DateTime start = DateTime.Now;
+
+            hashTest = ImplementacjaHaszMapą(p1).OrderBy(p => p.Item1).ToArray();
+
+            DateTime end = DateTime.Now;
+            Console.WriteLine((end - start).TotalMilliseconds);
+            
+
+            start = DateTime.Now;
+
+            treeTest = ImplementacjaDrzewem(p2).OrderBy(p => p.Item1).ToArray();
+
+            end = DateTime.Now;
+            Console.WriteLine((end - start).TotalMilliseconds); 
+
+            // huhu, a jednak - circa dwa razy wolniejsze...zarówno dla normalnych wyrazów jak i takich o 82 znakach...
+            // przy większych plikach, i większej liczbie wyrazów (ok 30k róznych wyrazów) - przewaga jest już mniejsza
+
+            // Aktualna wersja z rzadkimi tablicami na węzłach osiąga już zbliżone wyniki do tej na haszmapie.
+
+            
             CollectionAssert.AreEqual(hashTest, treeTest);
+        }
+    }
+
+    public class ConstProvider : IWordProvider
+    {
+        private readonly List<string> _buffer;
+        private int _index = 0;
+
+        public ConstProvider(List<string> buffer)
+        {
+            this._buffer = buffer;
+        }
+
+        public bool NextWord(out string word)
+        {
+            if (_index < _buffer.Count)
+            {
+                word = _buffer[_index++];
+                return true;
+            }
+
+            word = null;
+            return false;
         }
     }
 
     internal class DrzewoMarkova
     {
         // Nie ma co symulować ułomnego jednego głównego korzenia - po prostu zasadźmy wiele drzew
-        private SortedDictionary<char, Node> _korzenie = new SortedDictionary<char, Node>(); // będzie częsciowo posrtowane, na najwyzszym poziomie
+        private readonly Node[] _korzenie = new Node[Node._childrenArraySize];
 
         // Załozenie - trafiają tu już tylko elegancko oczyszczone, gołe wyrazy
         public Node FindOrAdd(string key)
         {
             char[] literki = key.ToCharArray();
-            if (!_korzenie.TryGetValue(literki[0], out var korzeń))
+            var index = Node._hashIndex[literki[0]];
+            if (_korzenie[index] == null)
             {
-                korzeń = new Node(literki[0], null);
-                this._korzenie.Add(literki[0], korzeń);
+                this._korzenie[index] = new Node(literki[0], null);
             }
 
-            return korzeń.ApplyTree(literki, 0);
+            return this._korzenie[index].ApplyTree(literki, 0);
         }
 
         /// <summary>
@@ -154,7 +189,7 @@ namespace CodeSkill18
         {
             get
             {
-                foreach (var korzeń in _korzenie.Values)
+                foreach (var korzeń in _korzenie.Where(k => k != null))
                 {
                     yield return korzeń;
 
@@ -170,27 +205,58 @@ namespace CodeSkill18
 
     internal class Node
     {
+        // tak czy siak - njapierw obliczenie tablicy indeksującej, ale tym razem już bez mapy bitowej
+
+        internal static readonly uint[] _hashIndex;
+        internal static int _childrenArraySize;
+
+        static Node()
+        {
+            var pary = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzżź".ToCharArray()
+                .Select(ch => (int)ch)
+                .ToArray();
+            var paryBig = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzżź".ToUpper().ToCharArray()
+                .Select(ch => (int)ch)
+                .ToArray();
+
+            _childrenArraySize = Math.Max(paryBig.Length, pary.Length);
+            var maxChildIndex = Math.Max(paryBig.Max(p => p), pary.Max(p => p)) + 1;
+            _hashIndex = new uint[maxChildIndex];
+
+            for (uint i = 0; i < pary.Length; i++)
+            {
+                _hashIndex[pary[i]] = i;
+            }
+            for (uint i = 0; i < paryBig.Length; i++)
+            {
+                _hashIndex[paryBig[i]] = i;
+            }
+        }
+
         public Node Parent;
 
         public uint Value;
 
         public char Key;
 
-        public Dictionary<char, Node> Children;
+        public Node[] Children;
+        
 
         public Node(char key, Node parent = null)
         {
+            //Console.Write('.'); // licz węzły ;-)
             Parent = parent;
             Value = 0;
             Key = key;
-            Children = new Dictionary<char, Node>();
+            Children = new Node[_childrenArraySize];
         }
 
+        // zwraca wszystkie węzły
         public IEnumerable<Node> All
         {
             get
             {
-                foreach (var kid in this.Children.Values)
+                foreach (var kid in this.Children.Where(ch => ch != null))
                 {
                     yield return kid;
 
@@ -205,13 +271,8 @@ namespace CodeSkill18
 
         public Node FindOrAdd(char childKey)
         {
-            if (!this.Children.TryGetValue(childKey, out var child))
-            {
-                child = new Node(childKey, this);
-                this.Children.Add(childKey, child);
-            }
-
-            return child;
+            var index = _hashIndex[childKey];
+            return this.Children[index] ?? (this.Children[index] = new Node(childKey, this));
         }
 
         public Node ApplyTree(char[] chars, int i)
