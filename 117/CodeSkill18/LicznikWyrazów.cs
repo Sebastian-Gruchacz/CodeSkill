@@ -34,31 +34,6 @@ namespace CodeSkill18
     // I tak to wszystko teoria - bez pożądnych load-testów i tak diabli wiedzą jakie podejście byłoby najszybsze... Bo zasoby pamięci i tak są tu marginalne.
     public class LicznikWyrazów
     {
-        // tak czy siak - njapierw obliczenie tablicy indeksującej, ale tym razem już bez mapy bitowej
-
-        private readonly uint[] _hashIndex;
-
-        public LicznikWyrazów()
-        {
-            var pary = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzżź".ToCharArray()
-                .Select(ch => (int)ch)
-                .ToArray();
-            var paryBig = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzżź".ToUpper().ToCharArray()
-                .Select(ch => (int)ch)
-                .ToArray();
-
-            _hashIndex = new uint[Math.Max(paryBig.Max(p => p), pary.Max(p => p)) + 1];
-
-            for (uint i = 0; i < pary.Length; i++)
-            {
-                this._hashIndex[pary[i]] = i;
-            }
-            for (uint i = 0; i < paryBig.Length; i++)
-            {
-                this._hashIndex[paryBig[i]] = i;
-            }
-        }
-
         // Prosta, czytelna i raczej dość szybka
         public IEnumerable<Tuple<string, uint>> ImplementacjaHaszMapą(IWordProvider dostawca)
         {
