@@ -103,31 +103,64 @@ namespace CodeSkill18
             Tuple<string, uint>[] hashTest;
             Tuple<string, uint>[] treeTest;
 
+            List<string> daneWejscioweBufor = new List<string>();
+
             using (var provider = new FileWordProvider(filePath))
             {
-                DateTime start = DateTime.Now;
-
-                hashTest = ImplementacjaHaszMapą(provider).OrderBy(p => p.Item1).ToArray();
-
-                DateTime end = DateTime.Now;
-                Console.WriteLine((end - start).TotalMilliseconds);
-            }
-            using (var provider = new FileWordProvider(filePath))
-            {
-                DateTime start = DateTime.Now;
-
-                treeTest = ImplementacjaDrzewem(provider).OrderBy(p => p.Item1).ToArray();
-
-                DateTime end = DateTime.Now;
-                Console.WriteLine((end - start).TotalMilliseconds); 
-
-                // huhu, a jednak - circa dwa razy wolniejsze...zarówno dla normalnych wyrazów jak i takich o 82 znakach...
-                // przy większych plikach, i większej liczbie wyrazów (ok 30k róznych wyrazów) - przewaga jest już mniejsza
-
-                // Aktualna wersja z rzadkimi tablicami na węzłach osiąga już zbliżone wyniki do tej na haszmapie.
+                while (provider.NextWord(out var word))
+                {
+                    daneWejscioweBufor.Add(word);
+                }
             }
 
+            var p1 = new ConstProvider(daneWejscioweBufor);
+            var p2 = new ConstProvider(daneWejscioweBufor);
+
+            DateTime start = DateTime.Now;
+
+            hashTest = ImplementacjaHaszMapą(p1).OrderBy(p => p.Item1).ToArray();
+
+            DateTime end = DateTime.Now;
+            Console.WriteLine((end - start).TotalMilliseconds);
+            
+
+            start = DateTime.Now;
+
+            treeTest = ImplementacjaDrzewem(p2).OrderBy(p => p.Item1).ToArray();
+
+            end = DateTime.Now;
+            Console.WriteLine((end - start).TotalMilliseconds); 
+
+            // huhu, a jednak - circa dwa razy wolniejsze...zarówno dla normalnych wyrazów jak i takich o 82 znakach...
+            // przy większych plikach, i większej liczbie wyrazów (ok 30k róznych wyrazów) - przewaga jest już mniejsza
+
+            // Aktualna wersja z rzadkimi tablicami na węzłach osiąga już zbliżone wyniki do tej na haszmapie.
+
+            
             CollectionAssert.AreEqual(hashTest, treeTest);
+        }
+    }
+
+    public class ConstProvider : IWordProvider
+    {
+        private readonly List<string> _buffer;
+        private int _index = 0;
+
+        public ConstProvider(List<string> buffer)
+        {
+            this._buffer = buffer;
+        }
+
+        public bool NextWord(out string word)
+        {
+            if (_index < _buffer.Count)
+            {
+                word = _buffer[_index++];
+                return true;
+            }
+
+            word = null;
+            return false;
         }
     }
 
