@@ -97,6 +97,7 @@ namespace CodeSkill18
         }
 
         [TestCase(@"C:\temp\internal-nlog.txt")]
+        [TestCase(@"C:\temp\big.txt")]
         public void test_porownawczy(string filePath)
         {
             Tuple<string, uint>[] hashTest;
@@ -120,8 +121,8 @@ namespace CodeSkill18
                 DateTime end = DateTime.Now;
                 Console.WriteLine((end - start).TotalMilliseconds); 
 
-                // huhu, a jednak - circa dwa razy wolniejsze...zarówno dl anormalnych wyrazów jak i takich o 82 znakach...
-
+                // huhu, a jednak - circa dwa razy wolniejsze...zarówno dla normalnych wyrazów jak i takich o 82 znakach...
+                // przy większych plikach, i większej liczbie wyrazów (ok 30k róznych wyrazów) - przewaga jest już mniejsza
             }
 
             CollectionAssert.AreEqual(hashTest, treeTest);
