@@ -29,14 +29,22 @@ namespace CodeSkill18
 
         public Anagramy()
         {
-           var pary = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzżź".ToCharArray()
+            // te same flagi bitowe dla małych i wielkich liter, będzie można nie robić .ToLower() przed liczeniem hasza i zaoszczędzić K
+            var pary = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzżź".ToCharArray()
                 .Select(ch => (int)ch)
                .ToArray();
+            var paryBig = "aąbcćdeęfghijklłmnńoópqrsśtuvwxyzżź".ToUpper().ToCharArray()
+                .Select(ch => (int)ch)
+                .ToArray();
 
-            _hashIndex = new ulong[pary.Max(p => p) + 1];
+            _hashIndex = new ulong[Math.Max(paryBig.Max(p => p), pary.Max(p => p)) + 1];
             for(int i = 0; i < pary.Length; i++)
             {
                 this._hashIndex[pary[i]] = (ulong)Math.Pow(2, i);
+            }
+            for(int i = 0; i < paryBig.Length; i++)
+            {
+                this._hashIndex[paryBig[i]] = (ulong)Math.Pow(2, i);
             }
         }
 
@@ -74,7 +82,7 @@ namespace CodeSkill18
 
         private ulong LiczHasz(string s)
         {
-            return s.ToLower().ToCharArray().Select(ch => this._hashIndex[(int) ch])
+            return s.ToCharArray().Select(ch => this._hashIndex[(int) ch])
                 .Aggregate((ulong)0, (a, v) => a |= v);
         }
 
